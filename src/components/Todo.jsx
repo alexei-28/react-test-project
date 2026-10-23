@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useState, useEffect} from 'react' // hooks
 import AddTaskForm from "./AddTaskForm.jsx";
 import SearchTaskForm from "./SearchTaskForm.jsx";
 import ToDoInfo from "./ToDoInfo.jsx";
@@ -8,12 +8,31 @@ const Todo = () => {
     // React hooks
     // tasks = current value. Function "setTasks" use to update "tasks".
     // tasks - React store "tasks" inside itself.
-    const [tasks, setTasks] = useState([
-        {id: "task-1", title: "Buy milk", isDone: false},
-        {id: "task-2", title: "Drink coffee", isDone: true}
-    ]);
+    const [tasks, setTasks] = useState(() => {
+        const savedTasks = localStorage.getItem('tasks')
+        console.log("Init savedTasks: ", savedTasks);
+        if (savedTasks) {
+            return JSON.parse(savedTasks)
+        }
+
+        // default array
+        return [
+            {id: "task-1", title: "Buy milk", isDone: false},
+            {id: "task-2", title: "Drink coffee", isDone: true}
+        ]
+    });
+
+    // React запускает каждый useEffect минимум один раз, независимо от того поменялась ли значение зависимости(tasks) или нет.
+    // Вызывается при первой загрузки и при каждом изменении tasks.
+    // Важен порядок вызова useEffect-ов.
+    useEffect(() => {
+        console.log("Changed tasks: ", tasks);
+        localStorage.setItem('tasks', JSON.stringify(tasks)) // данные в localStorage хранятся в виде строк
+    }, [tasks]) // для слежки изменения нужного состояния
+
 
     const [newTaskTitle, setNewTaskTitle] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
 
     const addTask = () => {
         if (newTaskTitle.trim().length > 0) {
@@ -26,7 +45,8 @@ const Todo = () => {
             const newTasks = [...tasks, newTask]
             // Установи tasks новым массивом(newTasks), состоящим из всех старых задач(tasks) плюс новой задачи(newTask).
             setTasks(newTasks);
-            setNewTaskTitle("");
+            setNewTaskTitle('');
+            setSearchQuery('')
         }
     }
 
@@ -50,16 +70,17 @@ const Todo = () => {
         const mappedTasks = tasks.map((task) => {
             if (task.id === taskId) {
                 // Создаем новый объект задачи, копируя старые свойства и перезаписывая только isDone
-                return { ...task, isDone }; // {...} создают абсолютно новый объект
+                return {...task, isDone}; // {...} создают абсолютно новый объект
             }
             return task; // Остальные задачи возвращаем без изменений
         });
-        setTasks(mappedTasks);
+        setTasks(mappedTasks)
     }
 
-    const filterTasks = (query) => {
-        console.log("Query: ", query);
-    }
+    const clearSearchQuery = searchQuery.trim().toLowerCase()
+    const filteredTasks = clearSearchQuery.length > 0
+        ? tasks.filter(({title}) => title.toLowerCase().includes(clearSearchQuery))
+        : null
 
     return (
         <div className="todo">
@@ -70,7 +91,8 @@ const Todo = () => {
                 setNewTaskTitle={setNewTaskTitle}
             />
             <SearchTaskForm
-                onSearchInput={filterTasks}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
             />
             <ToDoInfo
                 total={tasks.length}
@@ -79,6 +101,7 @@ const Todo = () => {
             />
             <TodoList
                 tasks={tasks}
+                filteredTasks={filteredTasks}
                 onDeleteTaskButtonClick={deleteTask}
                 onTaskCompleteChanged={toggleTaskComplete}
             />
