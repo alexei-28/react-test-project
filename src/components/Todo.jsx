@@ -1,8 +1,9 @@
-import {useState, useEffect} from 'react' // hooks
+import {useState, useEffect, useRef} from 'react' // hooks
 import AddTaskForm from "./AddTaskForm.jsx";
 import SearchTaskForm from "./SearchTaskForm.jsx";
 import ToDoInfo from "./ToDoInfo.jsx";
 import TodoList from "./TodoList.jsx";
+import Button from "./Button.jsx";
 
 const Todo = () => {
     // React hooks
@@ -10,7 +11,6 @@ const Todo = () => {
     // tasks - React store "tasks" inside itself.
     const [tasks, setTasks] = useState(() => {
         const savedTasks = localStorage.getItem('tasks')
-        console.log("Init savedTasks: ", savedTasks);
         if (savedTasks) {
             return JSON.parse(savedTasks)
         }
@@ -26,13 +26,20 @@ const Todo = () => {
     // Вызывается при первой загрузки и при каждом изменении tasks.
     // Важен порядок вызова useEffect-ов.
     useEffect(() => {
-        console.log("Changed tasks: ", tasks);
         localStorage.setItem('tasks', JSON.stringify(tasks)) // данные в localStorage хранятся в виде строк
     }, [tasks]) // для слежки изменения нужного состояния
 
+    useEffect(() => {
+        newTaskInputRef.current.focus()
+    }, [])
 
-    const [newTaskTitle, setNewTaskTitle] = useState('')
+    const [newTaskTitle, setNewTaskTitle] = useState('') // управляемый способ
     const [searchQuery, setSearchQuery] = useState('')
+
+    const newTaskInputRef = useRef(null) // неуправляемый способ
+    const firstInCompleteTaskRef = useRef(null)
+    // Конструкция ({isDone}) в качестве параметра функции — это деструктуризация объекта прямо на лету (в списке аргументов)
+    const firstIncompleteTaskId = tasks.find(({isDone}) => !isDone)?.id
 
     const addTask = () => {
         if (newTaskTitle.trim().length > 0) {
@@ -47,6 +54,7 @@ const Todo = () => {
             setTasks(newTasks);
             setNewTaskTitle('');
             setSearchQuery('')
+            newTaskInputRef.current.focus();
         }
     }
 
@@ -89,6 +97,7 @@ const Todo = () => {
                 addTask={addTask}
                 newTaskTitle={newTaskTitle}
                 setNewTaskTitle={setNewTaskTitle}
+                newTaskInputRef={newTaskInputRef}
             />
             <SearchTaskForm
                 searchQuery={searchQuery}
@@ -99,11 +108,17 @@ const Todo = () => {
                 done={tasks.filter(task => task.isDone).length}
                 onDeleteAllButtonClick={deleteAllTasks}
             />
+            <Button
+                onClick={() => firstInCompleteTaskRef.current?.scrollIntoView({behavior: "smooth"})}
+            >
+            Show first incomplete task</Button>
             <TodoList
                 tasks={tasks}
                 filteredTasks={filteredTasks}
                 onDeleteTaskButtonClick={deleteTask}
                 onTaskCompleteChanged={toggleTaskComplete}
+                firstInCompleteTaskRef={firstInCompleteTaskRef}
+                firstIncompleteTaskId={firstIncompleteTaskId}
             />
         </div>
     )
