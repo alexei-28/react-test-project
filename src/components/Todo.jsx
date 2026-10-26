@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef} from 'react' // hooks
+import {useState, useEffect, useRef, useCallback, useMemo} from 'react' // hooks
 import AddTaskForm from "./AddTaskForm.jsx";
 import SearchTaskForm from "./SearchTaskForm.jsx";
 import ToDoInfo from "./ToDoInfo.jsx";
@@ -41,7 +41,7 @@ const Todo = () => {
     // Конструкция ({isDone}) в качестве параметра функции — это деструктуризация объекта прямо на лету (в списке аргументов)
     const firstIncompleteTaskId = tasks.find(({isDone}) => !isDone)?.id
 
-    const addTask = () => {
+    const addTask = useCallback(() => {
         if (newTaskTitle.trim().length > 0) {
             const newTask = {
                 id: crypto?.randomUUID() ?? Date.now().toString,
@@ -51,30 +51,30 @@ const Todo = () => {
             // ...tasks spread operator -> [...] здесь создаёт новый массив(newTasks), а newTask добавляется в его конец.
             const newTasks = [...tasks, newTask]
             // Установи tasks новым массивом(newTasks), состоящим из всех старых задач(tasks) плюс новой задачи(newTask).
-            setTasks(newTasks);
+            setTasks((prevTasks) => [...prevTasks, newTask]);
             setNewTaskTitle('');
             setSearchQuery('')
             newTaskInputRef.current.focus();
         }
-    }
+    }, [newTaskTitle])
 
-    const deleteAllTasks = () => {
+    const deleteAllTasks = useCallback(() => {
         const isConfirmed = confirm("Are you sure you want to delete all tasks?");
         if (isConfirmed) {
             setTasks([])
         }
-    }
+    }, [])
 
-    const deleteTask = (taskId) => {
+    const deleteTask = useCallback((taskId) => {
         const isConfirmed = confirm("Are you sure you want to delete task?");
         if (isConfirmed) {
             // create new array
             const filterTasks = tasks.filter((it) => it.id !== taskId)
             setTasks(filterTasks)
         }
-    }
+    }, [tasks])
 
-    const toggleTaskComplete = (taskId, isDone) => {
+    const toggleTaskComplete = useCallback((taskId, isDone) => {
         const mappedTasks = tasks.map((task) => {
             if (task.id === taskId) {
                 // Создаем новый объект задачи, копируя старые свойства и перезаписывая только isDone
@@ -83,12 +83,20 @@ const Todo = () => {
             return task; // Остальные задачи возвращаем без изменений
         });
         setTasks(mappedTasks)
-    }
+    }, [tasks])
 
     const clearSearchQuery = searchQuery.trim().toLowerCase()
-    const filteredTasks = clearSearchQuery.length > 0
-        ? tasks.filter(({title}) => title.toLowerCase().includes(clearSearchQuery))
-        : null
+    const filteredTasks = useMemo(() => {
+        const clearSearchQuery = searchQuery.trim().toLowerCase()
+
+        return clearSearchQuery.length > 0
+            ? tasks.filter(({title}) => title.toLowerCase().includes(clearSearchQuery))
+            : null
+    }, [searchQuery, tasks])
+
+    const doneTasks = useMemo(() => {
+        return tasks.filter(task => task.isDone).length
+    }, [tasks])
 
     return (
         <div className="todo">
@@ -105,13 +113,13 @@ const Todo = () => {
             />
             <ToDoInfo
                 total={tasks.length}
-                done={tasks.filter(task => task.isDone).length}
+                done={doneTasks}
                 onDeleteAllButtonClick={deleteAllTasks}
             />
             <Button
                 onClick={() => firstInCompleteTaskRef.current?.scrollIntoView({behavior: "smooth"})}
             >
-            Show first incomplete task</Button>
+                Show first incomplete task</Button>
             <TodoList
                 tasks={tasks}
                 filteredTasks={filteredTasks}
