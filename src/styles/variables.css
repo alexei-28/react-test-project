@@ -10,6 +10,9 @@
   --color-gray-3: #B3B3B3;
   --color-gray-4: #757575;
 
+  --color-blue-1: #3574F0;
+  --color-blue-2: #4682F2;
+
   --border: 1px solid var(--color-gray-2);
   --border-radius: 8px;
 

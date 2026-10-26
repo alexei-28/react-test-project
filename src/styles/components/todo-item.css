@@ -36,8 +36,8 @@
   border-radius: 4px;
 
   &:checked {
-    background-color: var(--color-dark-2);
-    border-color: var(--color-dark-2);
+    background-color: var(--color-blue-1);
+    border-color: var(--color-blue-1);
 
     & + .todo-item__label {
       color: var(--color-gray-4);

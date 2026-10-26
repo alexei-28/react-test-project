@@ -5,8 +5,8 @@
   height: var(--input-height);
   padding: 12px;
   color: var(--color-gray-1);
-  background-color: var(--color-dark-2);
-  border: 1px solid var(--color-dark-2);
+  background-color: var(--color-blue-1);
+  border: 1px solid var(--color-blue-1);
   border-radius: var(--border-radius);
 
   &:hover {
